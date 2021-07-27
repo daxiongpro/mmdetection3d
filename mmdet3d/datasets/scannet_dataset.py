@@ -53,7 +53,7 @@ class ScanNetDataset(Custom3DDataset):
                  ann_file,
                  pipeline=None,
                  classes=None,
-                 modality=None,
+                 modality=dict(use_camera=False, use_depth=True),
                  box_type_3d='Depth',
                  filter_empty_gt=True,
                  test_mode=False):
@@ -66,6 +66,58 @@ class ScanNetDataset(Custom3DDataset):
             box_type_3d=box_type_3d,
             filter_empty_gt=filter_empty_gt,
             test_mode=test_mode)
+        assert 'use_camera' in self.modality and \
+               'use_depth' in self.modality
+        assert self.modality['use_camera'] or self.modality['use_depth']
+
+    def get_data_info(self, index):
+        """Get data info according to the given index.
+
+        Args:
+            index (int): Index of the sample data to get.
+
+        Returns:
+            dict: Data information that will be passed to the data \
+                preprocessing pipelines. It includes the following keys:
+
+                - sample_idx (str): Sample index.
+                - pts_filename (str): Filename of point clouds.
+                - file_name (str): Filename of point clouds.
+                - img_prefix (str | None, optional): Prefix of image files.
+                - img_info (dict, optional): Image info.
+                - ann_info (dict): Annotation info.
+        """
+        info = self.data_infos[index]
+        sample_idx = info['point_cloud']['lidar_idx']
+        pts_filename = osp.join(self.data_root, info['pts_path'])
+        input_dict = dict(sample_idx=sample_idx)
+
+        if self.modality['use_depth']:
+            input_dict['pts_filename'] = pts_filename
+            input_dict['file_name'] = pts_filename
+
+        if self.modality['use_camera']:
+            img_info = []
+            for img_path in info['img_paths']:
+                img_info.append(
+                    dict(filename=osp.join(self.data_root, img_path)))
+            intrinsic = info['intrinsics']
+            axis_align_matrix = self._get_axis_align_matrix(info)
+            depth2img = []
+            for extrinsic in info['extrinsics']:
+                depth2img.append(
+                    intrinsic @ np.linalg.inv(axis_align_matrix @ extrinsic))
+
+            input_dict['img_prefix'] = None
+            input_dict['img_info'] = img_info
+            input_dict['depth2img'] = depth2img
+
+        if not self.test_mode:
+            annos = self.get_ann_info(index)
+            input_dict['ann_info'] = annos
+            if self.filter_empty_gt and ~(annos['gt_labels_3d'] != -1).any():
+                return None
+        return input_dict
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -225,9 +277,6 @@ class ScanNetSegDataset(Custom3DSegDataset):
         scene_idxs (np.ndarray | str, optional): Precomputed index to load
             data. For scenes with many points, we may sample it several times.
             Defaults to None.
-        label_weight (np.ndarray | str, optional): Precomputed weight to \
-            balance loss calculation. If None is given, compute from data.
-            Defaults to None.
     """
     CLASSES = ('wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table',
                'door', 'window', 'bookshelf', 'picture', 'counter', 'desk',
@@ -271,8 +320,7 @@ class ScanNetSegDataset(Custom3DSegDataset):
                  modality=None,
                  test_mode=False,
                  ignore_index=None,
-                 scene_idxs=None,
-                 label_weight=None):
+                 scene_idxs=None):
 
         super().__init__(
             data_root=data_root,
@@ -283,8 +331,7 @@ class ScanNetSegDataset(Custom3DSegDataset):
             modality=modality,
             test_mode=test_mode,
             ignore_index=ignore_index,
-            scene_idxs=scene_idxs,
-            label_weight=label_weight)
+            scene_idxs=scene_idxs)
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -358,21 +405,17 @@ class ScanNetSegDataset(Custom3DSegDataset):
                             pred_sem_mask, out_dir, file_name,
                             np.array(self.PALETTE), self.ignore_index, show)
 
-    def get_scene_idxs_and_label_weight(self, scene_idxs, label_weight):
-        """Compute scene_idxs for data sampling and label weight for loss \
-        calculation.
+    def get_scene_idxs(self, scene_idxs):
+        """Compute scene_idxs for data sampling.
 
-        We sample more times for scenes with more points. Label_weight is
-        inversely proportional to number of class points.
+        We sample more times for scenes with more points.
         """
         # when testing, we load one whole scene every time
-        # and we don't need label weight for loss calculation
         if not self.test_mode and scene_idxs is None:
             raise NotImplementedError(
                 'please provide re-sampled scene indexes for training')
 
-        return super().get_scene_idxs_and_label_weight(scene_idxs,
-                                                       label_weight)
+        return super().get_scene_idxs(scene_idxs)
 
     def format_results(self, results, txtfile_prefix=None):
         r"""Format the results to txt file. Refer to `ScanNet documentation
