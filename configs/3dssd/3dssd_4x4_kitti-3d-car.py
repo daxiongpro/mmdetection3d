@@ -31,12 +31,17 @@ train_pipeline = [
         load_dim=4,
         use_dim=4,
         file_client_args=file_client_args),
+
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,
         with_label_3d=True,
         file_client_args=file_client_args),
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', with_bbox=True),
+    dict(type='Resize', img_scale=(1280, 384), keep_ratio=True),
+    dict(type='RandomFlip', flip_ratio=0.0),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectSample', db_sampler=db_sampler),
     dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
@@ -53,10 +58,11 @@ train_pipeline = [
     dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
     dict(type='IndoorPointSample', num_points=16384),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
-    dict(type='Collect3D', keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
+    dict(type='Collect3D', keys=['points', 'img', 'xy', 'gt_bboxes_3d', 'gt_labels_3d'])
 ]
 
 test_pipeline = [
+    dict(type='LoadImageFromFile'),
     dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
@@ -82,7 +88,7 @@ test_pipeline = [
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
                 with_label=False),
-            dict(type='Collect3D', keys=['points'])
+            dict(type='Collect3D', keys=['points', 'img', 'xy'])
         ])
 ]
 
