@@ -57,6 +57,7 @@ train_pipeline = [
         scale_ratio_range=[0.9, 1.1]),
     dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
     dict(type='IndoorPointSample', num_points=16384),
+    dict(type='LoadPointsXY'),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
     dict(type='Collect3D', keys=['points', 'img', 'xy', 'gt_bboxes_3d', 'gt_labels_3d'])
 ]
@@ -103,6 +104,9 @@ evaluation = dict(interval=2)
 
 # model settings
 model = dict(
+    backbone=dict(
+        # init_cfg=None,
+        img_channels=[3, 64, 128, 256]),
     bbox_head=dict(
         num_classes=1,
         bbox_coder=dict(
