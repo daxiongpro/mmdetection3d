@@ -13,7 +13,6 @@
 import os
 
 from mmdet.datasets import PIPELINES
-
 from mmdet3d.datasets.pipelines import calibration
 
 
@@ -27,23 +26,32 @@ class LoadPointsXY(object):
     """
 
     def __init__(self):
-        pass
+        self.calib_dir = '/data/kitti/training'
 
     def __call__(self, results):
         """
 
         Args:
             results (dict): Result dict from :obj:`mmdet.CustomDataset`.
-
+            dict_keys(['sample_idx', 'pts_filename', 'img_prefix', 'img_info', 'lidar2img', 'ann_info',
+            'img_fields', 'bbox3d_fields', 'pts_mask_fields', 'pts_seg_fields',
+            'bbox_fields', 'mask_fields', 'seg_fields', 'box_type_3d', 'box_mode_3d',
+            'points', 'gt_bboxes_3d', 'gt_labels_3d', 'filename', 'ori_filename', 'img',
+            'img_shape', 'ori_shape', 'gt_bboxes', 'gt_labels', 'scale', 'scale_idx',
+            'pad_shape', 'scale_factor', 'keep_ratio', 'flip', 'flip_direction',
+            'pcd_horizontal_flip', 'pcd_vertical_flip', 'transformation_3d_flow', 'pcd_rotation',
+            'pcd_scale_factor', 'pcd_trans'])
         Returns:
             dict: The dict contains loaded image and meta information.
         """
-        print(results)
-        # calib = self.get_calib(sample_id)
-        # pts_img, pts_rect_depth = calib.rect_to_img(pts_rect)  # 点云在img上的坐标(N,2)，深度图的深度
-        # pts_origin_xy = pts_img[pts_valid_flag]  # 点云在img上的坐标
-        # results['xy'] = pts_origin_xy[choice, :]
-        # return results
+        print(results['points'])
+        pass
+        sample_idx = results['sample_idx']
+        calib = self.get_calib(sample_idx)
+        pts_img, pts_rect_depth = calib.rect_to_img(pts_rect)  # 点云在img上的坐标(N,2)，深度图的深度
+        pts_origin_xy = pts_img[pts_valid_flag]  # 点云在img上的坐标
+        results['xy'] = pts_origin_xy[choice, :]
+        return results
 
     def _get_calib(self, idx):
         calib_file = os.path.join(self.calib_dir, '%06d.txt' % idx)
