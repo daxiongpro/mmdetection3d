@@ -51,13 +51,13 @@ class SingleStage3DDetector(Base3DDetector):
             outs = self.bbox_head(x)
         return outs
 
-    def extract_feat(self, points, img_metas=None):
+    def extract_feat(self, points, img, xy, img_metas=None):
         """Directly extract features from the backbone+neck.
 
         Args:
             points (torch.Tensor): Input points.
         """
-        x = self.backbone(points)
+        x = self.backbone(points, img, xy)
         if self.with_neck:
             x = self.neck(x)
         return x

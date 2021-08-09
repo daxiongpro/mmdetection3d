@@ -30,6 +30,8 @@ class VoteNet(SingleStage3DDetector):
                       img_metas,
                       gt_bboxes_3d,
                       gt_labels_3d,
+                      img=None,
+                      xy=None,
                       pts_semantic_mask=None,
                       pts_instance_mask=None,
                       gt_bboxes_ignore=None):
@@ -52,7 +54,7 @@ class VoteNet(SingleStage3DDetector):
         """
         points_cat = torch.stack(points)
 
-        x = self.extract_feat(points_cat)
+        x = self.extract_feat(points_cat, img, xy)
         bbox_preds = self.bbox_head(x, self.train_cfg.sample_mod)
         loss_inputs = (points, gt_bboxes_3d, gt_labels_3d, pts_semantic_mask,
                        pts_instance_mask, img_metas)

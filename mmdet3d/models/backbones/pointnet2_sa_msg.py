@@ -284,7 +284,7 @@ class PointNet2SAMSG(BasePointNet):
         xy[:, :, 1] = xy[:, :, 1] / (size_range[1] - 1.0) * 2.0 - 1.0
         # = xy / (size_range - 1.) * 2 - 1.
         l_xy_cor = [xy]
-        imgs = [img]
+        imgs = [img.float()]
 
         for i in range(self.num_sa):
             # 获取点云特征
@@ -293,7 +293,8 @@ class PointNet2SAMSG(BasePointNet):
             if self.aggregation_mlps[i] is not None:
                 cur_features = self.aggregation_mlps[i](cur_features)
 
-            li_xy_cor = torch.gather(l_xy_cor[i], dim=1, index=cur_indices)  # 采样点的xy坐标。(B, M, 2)
+            cur_indices_copy = cur_indices.long().unsqueeze(-1).repeat(1, 1, 2)
+            li_xy_cor = torch.gather(l_xy_cor[i], dim=1, index=cur_indices_copy)  # 采样点的xy坐标。(B, M, 2)
             # 获取图片特征
             image_feature_map = self.Img_Block[i](imgs[i])  # 图像下采样
             img_gather_feature = feature_gather(image_feature_map, li_xy_cor)  # 获取点在图片上的特征。li_xy_cor为点的坐标
