@@ -39,6 +39,8 @@ class VoteNet(SingleStage3DDetector):
 
         Args:
             points (list[torch.Tensor]): Points of each batch.
+            img(torch.Tensor)
+            xy(torch.Tensor)
             img_metas (list): Image metas.
             gt_bboxes_3d (:obj:`BaseInstance3DBoxes`): gt bboxes of each batch.
             gt_labels_3d (list[torch.Tensor]): gt class labels of each batch.
@@ -62,11 +64,13 @@ class VoteNet(SingleStage3DDetector):
             bbox_preds, *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
         return losses
 
-    def simple_test(self, points, img_metas, imgs=None, rescale=False):
+    def simple_test(self, points, img_metas, img=None, xy=None, imgs=None, rescale=False):
         """Forward of testing.
 
         Args:
             points (list[torch.Tensor]): Points of each sample.
+            img(torch.Tensor)
+            xy(list[torch.Tensor])
             img_metas (list): Image metas.
             rescale (bool): Whether to rescale results.
 
@@ -75,7 +79,7 @@ class VoteNet(SingleStage3DDetector):
         """
         points_cat = torch.stack(points)
 
-        x = self.extract_feat(points_cat)
+        x = self.extract_feat(points_cat, img, xy)
         bbox_preds = self.bbox_head(x, self.test_cfg.sample_mod)
         bbox_list = self.bbox_head.get_bboxes(
             points_cat, bbox_preds, img_metas, rescale=rescale)
@@ -85,10 +89,10 @@ class VoteNet(SingleStage3DDetector):
         ]
         return bbox_results
 
-    def aug_test(self, points, img_metas, imgs=None, rescale=False):
+    def aug_test(self, points, img_metas, img=None, xy=None, imgs=None, rescale=False):
         """Test with augmentation."""
         points_cat = [torch.stack(pts) for pts in points]
-        feats = self.extract_feats(points_cat, img_metas)
+        feats = self.extract_feats(points_cat, img, xy, img_metas)
 
         # only support aug_test for one sample
         aug_bboxes = []

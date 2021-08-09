@@ -49,6 +49,15 @@ class DefaultFormatBundle(object):
             else:
                 img = np.ascontiguousarray(results['img'].transpose(2, 0, 1))
                 results['img'] = DC(to_tensor(img), stack=True)
+        # if 'xy' in results:
+        #     if isinstance(results['xy'], list):
+        #         # process multiple imgs in single frame
+        #         xys = [xy for xy in results['xy']]
+        #         xys = np.ascontiguousarray(np.stack(xys, axis=0))
+        #         results['img'] = DC(to_tensor(xys), stack=True)
+        #     else:
+        #         xy = np.ascontiguousarray(results['xy'])
+        #         results['xy'] = DC(to_tensor(xy), stack=True)
         for key in [
                 'proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels',
                 'gt_labels_3d', 'attr_labels', 'pts_instance_mask',

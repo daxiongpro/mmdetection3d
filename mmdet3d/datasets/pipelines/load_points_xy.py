@@ -36,14 +36,6 @@ class LoadPointsXY(object):
 
         Args:
             results (dict): Result dict from :obj:`mmdet.CustomDataset`.
-            dict_keys(['sample_idx', 'pts_filename', 'img_prefix', 'img_info', 'lidar2img', 'ann_info',
-            'img_fields', 'bbox3d_fields', 'pts_mask_fields', 'pts_seg_fields',
-            'bbox_fields', 'mask_fields', 'seg_fields', 'box_type_3d', 'box_mode_3d',
-            'points', 'gt_bboxes_3d', 'gt_labels_3d', 'filename', 'ori_filename', 'img',
-            'img_shape', 'ori_shape', 'gt_bboxes', 'gt_labels', 'scale', 'scale_idx',
-            'pad_shape', 'scale_factor', 'keep_ratio', 'flip', 'flip_direction',
-            'pcd_horizontal_flip', 'pcd_vertical_flip', 'transformation_3d_flow', 'pcd_rotation',
-            'pcd_scale_factor', 'pcd_trans'])
         Returns:
             dict: The dict contains loaded image and meta information.
         """
