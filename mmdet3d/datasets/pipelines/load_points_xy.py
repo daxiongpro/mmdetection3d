@@ -49,7 +49,7 @@ class LoadPointsXY(object):
         """
 
         sample_idx = results['sample_idx']
-        calib = self.get_calib(sample_idx)
+        calib = self._get_calib(sample_idx)
         pts_lidar = results['points']
         pts_lidar = pts_lidar.tensor.numpy()
         pts_rect = calib.lidar_to_rect(pts_lidar[:, 0:3])  # 点云在相机坐标系下的坐标(N,3)
@@ -58,7 +58,7 @@ class LoadPointsXY(object):
         results['xy'] = pts_img
         return results
 
-    def get_calib(self, idx):
+    def _get_calib(self, idx):
         calib_file = os.path.join(self.calib_dir, '%06d.txt' % idx)
         assert os.path.exists(calib_file)
         return calibration.Calibration(calib_file)

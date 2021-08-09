@@ -23,6 +23,7 @@ class VoteNet(SingleStage3DDetector):
             test_cfg=test_cfg,
             init_cfg=None,
             pretrained=pretrained)
+        print()
 
     def forward_train(self,
                       points,
