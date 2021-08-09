@@ -57,7 +57,7 @@ train_pipeline = [
         scale_ratio_range=[0.9, 1.1]),
     dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
     dict(type='IndoorPointSample', num_points=16384),
-    dict(type='LoadPointsXY'),
+    dict(type='LoadPointsXY', mode='training'),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
     dict(type='Collect3D', keys=['points', 'img', 'xy', 'gt_bboxes_3d', 'gt_labels_3d'])
 ]
@@ -85,6 +85,7 @@ test_pipeline = [
             dict(
                 type='PointsRangeFilter', point_cloud_range=point_cloud_range),
             dict(type='IndoorPointSample', num_points=16384),
+            dict(type='LoadPointsXY', mode='testing'),
             dict(
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
