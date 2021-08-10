@@ -70,7 +70,7 @@ test_pipeline = [
         load_dim=4,
         use_dim=4,
         file_client_args=file_client_args),
-    dict(type='LoadPointsXY', mode='testing'),
+
     dict(
         type='MultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -86,6 +86,7 @@ test_pipeline = [
             dict(
                 type='PointsRangeFilter', point_cloud_range=point_cloud_range),
             dict(type='IndoorPointSample', num_points=16384),
+            dict(type='LoadPointsXY', mode='testing'),
             dict(
                 type='DefaultFormatBundle3D',
                 class_names=class_names,

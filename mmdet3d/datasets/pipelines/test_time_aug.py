@@ -107,6 +107,13 @@ class MultiScaleFlipAug3D(object):
         for data in aug_data:
             for key, val in data.items():
                 aug_data_dict[key].append(val)
+        """
+        都没有带batch
+        aug_data_dict['points']:[(16384, 4)]
+        aug_data_dict['img']:[([3, 375, 1242])]
+        aug_data_dict['xy']:[(16384, 2)]
+        
+        """
         return aug_data_dict
 
     def __repr__(self):

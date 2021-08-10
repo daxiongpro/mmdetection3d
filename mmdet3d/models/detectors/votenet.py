@@ -78,8 +78,9 @@ class VoteNet(SingleStage3DDetector):
             list: Predicted 3d boxes.
         """
         points_cat = torch.stack(points)
+        # xy_cat = torch.stack(xy)
 
-        x = self.extract_feat(points_cat, img, xy)
+        x = self.extract_feat(points_cat, img, xy[0])
         bbox_preds = self.bbox_head(x, self.test_cfg.sample_mod)
         bbox_list = self.bbox_head.get_bboxes(
             points_cat, bbox_preds, img_metas, rescale=rescale)
