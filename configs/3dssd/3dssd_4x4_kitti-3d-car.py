@@ -102,7 +102,7 @@ data = dict(
     val=dict(pipeline=test_pipeline),
     test=dict(pipeline=test_pipeline))
 
-evaluation = dict(interval=1)
+evaluation = dict(interval=2)  # 训练多少次epoch测试一次
 
 # model settings
 model = dict(
