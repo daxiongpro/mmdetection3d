@@ -92,17 +92,17 @@ def show_result(points,
     result_path = osp.join(out_dir, filename)
     mmcv.mkdir_or_exist(result_path)
 
-    if show:
-        from .open3d_vis import Visualizer
-
-        vis = Visualizer(points)
-        if pred_bboxes is not None:
-            vis.add_bboxes(bbox3d=pred_bboxes)
-        if gt_bboxes is not None:
-            vis.add_bboxes(bbox3d=gt_bboxes, bbox_color=(0, 0, 1))
-        show_path = osp.join(result_path,
-                             f'{filename}_online.png') if snapshot else None
-        vis.show(show_path)
+    # if show:
+    #     from .open3d_vis import Visualizer
+    #
+    #     vis = Visualizer(points)
+    #     if pred_bboxes is not None:
+    #         vis.add_bboxes(bbox3d=pred_bboxes)
+    #     if gt_bboxes is not None:
+    #         vis.add_bboxes(bbox3d=gt_bboxes, bbox_color=(0, 0, 1))
+    #     show_path = osp.join(result_path,
+    #                          f'{filename}_online.png') if snapshot else None
+    #     vis.show(show_path)
 
     if points is not None:
         _write_obj(points, osp.join(result_path, f'{filename}_points.obj'))
