@@ -9,11 +9,12 @@ from .groupfree3d_head import GroupFree3DHead
 from .parta2_rpn_head import PartA2RPNHead
 from .shape_aware_head import ShapeAwareHead
 from .ssd_3d_head import SSD3DHead
+from .ssd_3dt_head import SSD3DTHead
 from .vote_head import VoteHead
 
 __all__ = [
     'Anchor3DHead', 'FreeAnchor3DHead', 'PartA2RPNHead', 'VoteHead',
     'SSD3DHead', 'BaseConvBboxHead', 'CenterHead', 'ShapeAwareHead',
     'BaseMono3DDenseHead', 'AnchorFreeMono3DHead', 'FCOSMono3DHead',
-    'GroupFree3DHead'
+    'GroupFree3DHead', 'SSD3DTHead'
 ]

@@ -103,12 +103,11 @@ model = dict(
     backbone=dict(
         type='PCT'
         ),
-
-
     bbox_head=dict(
-            num_classes=1,
-            bbox_coder=dict(
-                type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
+        type='SSD3DTHead',
+        num_classes=1,
+        bbox_coder=dict(
+            type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
 
 # optimizer
 lr = 0.002  # max learning rate

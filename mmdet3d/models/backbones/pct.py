@@ -242,11 +242,7 @@ class PCT(BaseModule):
 
         x = self.linear(x)
 
-        # x = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
-        x_max = torch.max(x, dim=-1)[0]
-        x_mean = torch.mean(x, dim=-1)
 
-        # return x, x_max, x_mean
 
         return dict(
             sa_xyz=xyz,
