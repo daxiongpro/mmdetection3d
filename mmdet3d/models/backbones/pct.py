@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 from mmcv.runner import auto_fp16, BaseModule
 from torch import nn as nn
 import torch.nn.functional as F
@@ -141,7 +141,7 @@ class SG(nn.Module):
 
 
 class NeighborEmbedding(nn.Module):
-    def __init__(self, samples=[512, 256]):
+    def __init__(self, samples=[4096, 512, 256]):
         super(NeighborEmbedding, self).__init__()
 
         self.conv1 = nn.Conv1d(3, 64, kernel_size=1, bias=False)
@@ -151,6 +151,7 @@ class NeighborEmbedding(nn.Module):
 
         self.sg1 = SG(s=samples[0], in_channels=128, out_channels=128)
         self.sg2 = SG(s=samples[1], in_channels=256, out_channels=256)
+        self.sg3 = SG(s=samples[2], in_channels=512, out_channels=256)
 
     def forward(self, x):
         """
@@ -162,10 +163,11 @@ class NeighborEmbedding(nn.Module):
         features = F.relu(self.bn1(self.conv1(x)))  # [B, 64, N]
         features = F.relu(self.bn2(self.conv2(features)))  # [B, 64, N]
 
-        xyz1, features1 = self.sg1(features, xyz)  # [B, 128, 512]
-        _, features2 = self.sg2(features1, xyz1)  # [B, 256, 256]
+        xyz1, features1 = self.sg1(features, xyz)  # [B, 128, 4096]
+        xyz2, features2 = self.sg2(features1, xyz1)  # [B, 256, 512]
+        xyz3, features3 = self.sg3(features2, xyz2)  # [B, 256, 256]
 
-        return features2
+        return features3
 
 
 class OA(nn.Module):
@@ -213,7 +215,7 @@ class OA(nn.Module):
 @BACKBONES.register_module()
 class PCT(BaseModule):
 
-    def __init__(self, samples=[512, 256]):
+    def __init__(self, samples=[4096, 1024, 512]):
         super().__init__()
 
         self.neighbor_embedding = NeighborEmbedding(samples)
@@ -224,14 +226,16 @@ class PCT(BaseModule):
         self.oa4 = OA(256)
 
         self.linear = nn.Sequential(
-            nn.Conv1d(1280, 1024, kernel_size=1, bias=False),
-            nn.BatchNorm1d(1024),
+            nn.Conv1d(1280, 256, kernel_size=1, bias=False),
+            nn.BatchNorm1d(256),
             nn.LeakyReLU(negative_slope=0.2)
         )
 
     @auto_fp16(apply_to=('points',))
     def forward(self, points):
-        xyz = self.neighbor_embedding(points)
+        # points: B, 4, N = B, 4, 16384
+        points = points[:, :3, :]  # 只取xyz，不要强度值
+        xyz = self.neighbor_embedding(points)  # B C N
 
         x1 = self.oa1(xyz)
         x2 = self.oa2(x1)
@@ -240,11 +244,18 @@ class PCT(BaseModule):
 
         x = torch.cat([xyz, x1, x2, x3, x4], dim=1)
 
-        x = self.linear(x)
-
-
+        features = self.linear(x)  # b c n =  4 256 512
 
         return dict(
-            sa_xyz=xyz,
-            sa_features=out_sa_features,
-            sa_indices=out_sa_indices)
+            sa_xyz=points.permute(0, 2, 1).contiguous(),  # b n 3
+            sa_features=features  # b c n
+        )
+
+
+if __name__ == '__main__':
+    pct = PCT().cuda()
+
+    # xyz = np.fromfile('tests/data/kitti/training/velodyne/000000.bin', dtype=np.float32)
+    xyz = torch.rand(4, 3, 16384)
+    xyz = xyz.cuda()  # (B, 3, N)
+    out = pct(xyz)

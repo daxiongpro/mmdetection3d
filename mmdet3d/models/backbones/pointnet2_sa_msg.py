@@ -50,7 +50,7 @@ class PointNet2SAMSG(BasePointNet):
                  fps_mods=(('D-FPS'), ('FS'), ('F-FPS', 'D-FPS')),
                  fps_sample_range_lists=((-1), (-1), (512, -1)),
                  dilated_group=(True, True, True),
-                 out_indices=(2, ),
+                 out_indices=(2,),
                  norm_cfg=dict(type='BN2d'),
                  sa_cfg=dict(
                      type='PointSAModuleMSG',
@@ -119,7 +119,7 @@ class PointNet2SAMSG(BasePointNet):
                         bias=True))
                 sa_in_channel = cur_aggregation_channel
 
-    @auto_fp16(apply_to=('points', ))
+    @auto_fp16(apply_to=('points',))
     def forward(self, points):
         """Forward pass.
 
@@ -165,6 +165,6 @@ class PointNet2SAMSG(BasePointNet):
                 out_sa_indices.append(sa_indices[-1])
 
         return dict(
-            sa_xyz=out_sa_xyz,
-            sa_features=out_sa_features,
+            sa_xyz=out_sa_xyz,  # b n 3
+            sa_features=out_sa_features,  # b c n
             sa_indices=out_sa_indices)

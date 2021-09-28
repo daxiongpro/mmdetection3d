@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/3dssd.py', '../_base_/datasets/kitti-3d-car.py',
+    '../_base_/datasets/kitti-3d-car.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -87,7 +87,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=1,
     workers_per_gpu=4,
     train=dict(dataset=dict(pipeline=train_pipeline)),
     val=dict(pipeline=test_pipeline),
@@ -101,16 +101,72 @@ evaluation = dict(interval=2)
 model = dict(
     type='SSD3DT',
     backbone=dict(
-        type='PCT'
-        ),
+        type='PCT'),
     bbox_head=dict(
         type='SSD3DTHead',
+        in_channels=256,
+        vote_module_cfg=dict(
+            in_channels=256,
+            num_points=256,
+            gt_per_seed=1,
+            conv_channels=(128, ),
+            conv_cfg=dict(type='Conv1d'),
+            norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
+            with_res_feat=False,
+            vote_xyz_range=(3.0, 3.0, 2.0)),
+        vote_aggregation_cfg=dict(
+            type='PointSAModuleMSG',
+            num_point=256,
+            radii=(4.8, 6.4),
+            sample_nums=(16, 32),
+            mlp_channels=((256, 256, 256, 512), (256, 256, 512, 1024)),
+            norm_cfg=dict(type='BN2d', eps=1e-3, momentum=0.1),
+            use_xyz=True,
+            normalize_xyz=False,
+            bias=True),
+        pred_layer_cfg=dict(
+            in_channels=1536,
+            shared_conv_channels=(512, 128),
+            cls_conv_channels=(128, ),
+            reg_conv_channels=(128, ),
+            conv_cfg=dict(type='Conv1d'),
+            norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
+            bias=True),
+        conv_cfg=dict(type='Conv1d'),
+        norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
+        objectness_loss=dict(
+            type='CrossEntropyLoss',
+            use_sigmoid=True,
+            reduction='sum',
+            loss_weight=1.0),
+        center_loss=dict(
+            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
+        dir_class_loss=dict(
+            type='CrossEntropyLoss', reduction='sum', loss_weight=1.0),
+        dir_res_loss=dict(
+            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
+        size_res_loss=dict(
+            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
+        corner_loss=dict(
+            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
+        vote_loss=dict(type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
+
         num_classes=1,
         bbox_coder=dict(
-            type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
+            type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)),
+    # model training and testing settings
+    train_cfg=dict(
+        sample_mod='spec', pos_distance_thr=10.0, expand_dims_length=0.05),
+    test_cfg=dict(
+        nms_cfg=dict(type='nms', iou_thr=0.1),
+        sample_mod='spec',
+        score_thr=0.0,
+        per_class_proposal=True,
+        max_output_num=100))
+
 
 # optimizer
-lr = 0.002  # max learning rate
+lr = 0.001  # max learning rate
 optimizer = dict(type='AdamW', lr=lr, weight_decay=0)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 lr_config = dict(policy='step', warmup=None, step=[45, 60])

@@ -1,4 +1,3 @@
-
 import torch
 
 from mmdet3d.core import bbox3d2result, merge_aug_bboxes_3d
@@ -54,6 +53,7 @@ class SSD3DT(SingleStage3DDetector):
             dict: Losses.
         """
         points_cat = torch.stack(points)
+        points_cat = points_cat.permute(0, 2, 1).contiguous()  # b c n
 
         x = self.extract_feat(points_cat)
         bbox_preds = self.bbox_head(x, self.train_cfg.sample_mod)
@@ -75,6 +75,7 @@ class SSD3DT(SingleStage3DDetector):
             list: Predicted 3d boxes.
         """
         points_cat = torch.stack(points)
+        points_cat = points_cat.permute(0, 2, 1).contiguous()  # b c n
 
         x = self.extract_feat(points_cat)
         bbox_preds = self.bbox_head(x, self.test_cfg.sample_mod)
