@@ -222,11 +222,11 @@ class PCT(BaseModule):
 
         self.oa1 = OA(256)
         self.oa2 = OA(256)
-        self.oa3 = OA(256)
-        self.oa4 = OA(256)
+        # self.oa3 = OA(256)
+        # self.oa4 = OA(256)
 
         self.linear = nn.Sequential(
-            nn.Conv1d(1280, 256, kernel_size=1, bias=False),
+            nn.Conv1d(768, 256, kernel_size=1, bias=False),
             nn.BatchNorm1d(256),
             nn.LeakyReLU(negative_slope=0.2)
         )
@@ -240,10 +240,11 @@ class PCT(BaseModule):
 
         x1 = self.oa1(xyz)
         x2 = self.oa2(x1)
-        x3 = self.oa3(x2)
-        x4 = self.oa4(x3)
+        # x3 = self.oa3(x2)
+        # x4 = self.oa4(x3)
 
-        x = torch.cat([xyz, x1, x2, x3, x4], dim=1)
+        # x = torch.cat([xyz, x1, x2, x3, x4], dim=1)
+        x = torch.cat([xyz, x1, x2], dim=1)
 
         features = self.linear(x)  # b c n =  4 256 512
 
