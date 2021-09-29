@@ -234,6 +234,7 @@ class PCT(BaseModule):
     @auto_fp16(apply_to=('points',))
     def forward(self, points):
         # points: B, 4, N = B, 4, 16384
+
         # points = points[:, :3, :]  # 只取xyz，不要强度值
         # xyz = self.neighbor_embedding(points)  # B C N
         #
@@ -251,10 +252,11 @@ class PCT(BaseModule):
         #     sa_features=features  # b c n
         # )
 
-        b, n, c = points.size()
+        b, c, n = points.size()
+        n = 512
         return dict(
-            sa_xyz=torch.rand(b, n, c),  # b n 3
-            sa_features=torch.rand(b, n, 256)  # b c n
+            sa_xyz=torch.rand(b, n, 3).cuda(),  # b n 3
+            sa_features=torch.rand(b, 256, n).cuda()  # b c n
         )
 
 
