@@ -218,46 +218,46 @@ class PCT(BaseModule):
     def __init__(self, samples=[4096, 1024, 512]):
         super().__init__()
 
-        # self.neighbor_embedding = NeighborEmbedding(samples)
-        #
-        # self.oa1 = OA(256)
-        # self.oa2 = OA(256)
-        # self.oa3 = OA(256)
-        # self.oa4 = OA(256)
-        #
-        # self.linear = nn.Sequential(
-        #     nn.Conv1d(1280, 256, kernel_size=1, bias=False),
-        #     nn.BatchNorm1d(256),
-        #     nn.LeakyReLU(negative_slope=0.2)
-        # )
+        self.neighbor_embedding = NeighborEmbedding(samples)
+
+        self.oa1 = OA(256)
+        self.oa2 = OA(256)
+        self.oa3 = OA(256)
+        self.oa4 = OA(256)
+
+        self.linear = nn.Sequential(
+            nn.Conv1d(1280, 256, kernel_size=1, bias=False),
+            nn.BatchNorm1d(256),
+            nn.LeakyReLU(negative_slope=0.2)
+        )
 
     @auto_fp16(apply_to=('points',))
     def forward(self, points):
         # points: B, 4, N = B, 4, 16384
 
-        # points = points[:, :3, :]  # 只取xyz，不要强度值
-        # xyz = self.neighbor_embedding(points)  # B C N
-        #
-        # x1 = self.oa1(xyz)
-        # x2 = self.oa2(x1)
-        # x3 = self.oa3(x2)
-        # x4 = self.oa4(x3)
-        #
-        # x = torch.cat([xyz, x1, x2, x3, x4], dim=1)
-        #
-        # features = self.linear(x)  # b c n =  4 256 512
-        #
-        # return dict(
-        #     sa_xyz=points.permute(0, 2, 1).contiguous(),  # b n 3
-        #     sa_features=features  # b c n
-        # )
+        points = points[:, :3, :]  # 只取xyz，不要强度值
+        xyz = self.neighbor_embedding(points)  # B C N
 
-        b, c, n = points.size()
-        n = 512
+        x1 = self.oa1(xyz)
+        x2 = self.oa2(x1)
+        x3 = self.oa3(x2)
+        x4 = self.oa4(x3)
+
+        x = torch.cat([xyz, x1, x2, x3, x4], dim=1)
+
+        features = self.linear(x)  # b c n =  4 256 512
+
         return dict(
-            sa_xyz=torch.rand(b, n, 3).cuda(),  # b n 3
-            sa_features=torch.rand(b, 256, n).cuda()  # b c n
+            sa_xyz=points.permute(0, 2, 1).contiguous(),  # b n 3
+            sa_features=features  # b c n
         )
+
+        # b, c, n = points.size()
+        # n = 512
+        # return dict(
+        #     sa_xyz=torch.rand(b, n, 3).cuda(),  # b n 3
+        #     sa_features=torch.rand(b, 256, n).cuda()  # b c n
+        # )
 
 
 if __name__ == '__main__':
