@@ -13,6 +13,40 @@ import torch.nn.functional as F
 
 BatchNorm2d = nn.BatchNorm2d
 
+def show_pc(pointcloud):
+    import numpy as np
+    import mayavi.mlab
+
+    # lidar_path更换为自己的.bin文件路径
+    # pointcloud = np.fromfile("/home/caizhengyi/2TB1/code/mmdetection3d/data/kitti/training/velodyne/000000.bin",
+    #                          dtype=np.float32, count=-1).reshape([-1, 4])
+
+    x = pointcloud[:, 0]  # x position of point
+    y = pointcloud[:, 1]  # y position of point
+    z = pointcloud[:, 2]  # z position of point
+
+    r = pointcloud[:, 3]  # reflectance value of point
+    d = np.sqrt(x ** 2 + y ** 2)  # Map Distance from sensor
+
+    degr = np.degrees(np.arctan(z / d))
+
+    vals = 'height'
+    if vals == "height":
+        col = z
+    else:
+        col = d
+
+    fig = mayavi.mlab.figure(bgcolor=(0, 0, 0), size=(640, 500))
+    mayavi.mlab.points3d(x, y, z,
+                         col,  # Values used for Color
+                         mode="point",
+                         colormap='spectral',  # 'bone', 'copper', 'gnuplot'
+                         # color=(0, 1, 0),   # Used a fixed (r,g,b) instead
+                         figure=fig,
+                         scale_factor=0.5
+                         )
+
+    mayavi.mlab.show()
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -290,6 +324,7 @@ class PointNet2SAMSG(BasePointNet):
             # 获取点云特征
             cur_xyz, cur_features, cur_indices = self.SA_modules[i](
                 sa_xyz[i], sa_features[i])
+
             if self.aggregation_mlps[i] is not None:
                 cur_features = self.aggregation_mlps[i](cur_features)
 

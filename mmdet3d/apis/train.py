@@ -1,3 +1,4 @@
+import torch
 from mmdet.apis import train_detector
 from mmseg.apis import train_segmentor
 
@@ -24,6 +25,7 @@ def train_model(model,
             timestamp=timestamp,
             meta=meta)
     else:
+        torch.save(model, "work_dirs/3dssd_4x4_kitti-3d-car/PISSD-MODEL")
         train_detector(
             model,
             dataset,
