@@ -98,12 +98,31 @@ evaluation = dict(interval=2)
 
 # model settings
 model = dict(
+    type='SESSD3DNet_stu',
+    backbone=dict(
+        type='PointNet2SAMSG',
+        in_channels=4,
+        num_points=(4096, 512, (256, 256)),
+        radii=((0.2, 0.4, 0.8), (0.4, 0.8, 1.6), (1.6, 3.2, 4.8)),
+        num_samples=((32, 32, 64), (32, 32, 64), (32, 32, 32)),
+        sa_channels=(((16, 16, 32), (16, 16, 32), (32, 32, 64)),
+                     ((64, 64, 128), (64, 64, 128), (64, 96, 128)),
+                     ((128, 128, 256), (128, 192, 256), (128, 256, 256))),
+        aggregation_channels=(64, 128, 256),
+        fps_mods=(('D-FPS'), ('FS'), ('F-FPS', 'D-FPS')),
+        fps_sample_range_lists=((-1), (-1), (512, -1)),
+        norm_cfg=dict(type='BN2d', eps=1e-3, momentum=0.1),
+        sa_cfg=dict(
+            type='PointSAModuleMSG',
+            pool_mod='max',
+            use_xyz=True,
+            normalize_xyz=False)),
     bbox_head=dict(
         type='SESSD3DHead',
-        in_channels=256,
         num_classes=1,
         bbox_coder=dict(
             type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True),
+        in_channels=256,
         vote_module_cfg=dict(
             in_channels=256,
             num_points=256,
@@ -148,9 +167,17 @@ model = dict(
             type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
         corner_loss=dict(
             type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        vote_loss=dict(type='SmoothL1Loss', reduction='sum', loss_weight=1.0)
-    )
-)
+        vote_loss=dict(type='SmoothL1Loss', reduction='sum', loss_weight=1.0)),
+    # model training and testing settings
+    train_cfg=dict(
+        sample_mod='spec', pos_distance_thr=10.0, expand_dims_length=0.05),
+    test_cfg=dict(
+        nms_cfg=dict(type='nms', iou_thr=0.1),
+        sample_mod='spec',
+        score_thr=0.0,
+        per_class_proposal=True,
+        max_output_num=100))
+
 
 # optimizer
 lr = 0.002  # max learning rate

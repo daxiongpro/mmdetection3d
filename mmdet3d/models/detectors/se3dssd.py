@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
+
 import torch
 
 from mmdet3d.core import bbox3d2result, merge_aug_bboxes_3d
@@ -7,7 +9,7 @@ from .single_stage import SingleStage3DDetector
 
 
 @DETECTORS.register_module()
-class SESSD3DNet(SingleStage3DDetector):
+class SESSD3DNet_stu(SingleStage3DDetector):
     r"""`VoteNet <https://arxiv.org/pdf/1904.09664.pdf>`_ for 3D detection."""
 
     def __init__(self,
@@ -17,7 +19,7 @@ class SESSD3DNet(SingleStage3DDetector):
                  test_cfg=None,
                  init_cfg=None,
                  pretrained=None):
-        super(SESSD3DNet, self).__init__(
+        super(SESSD3DNet_stu, self).__init__(
             backbone=backbone,
             bbox_head=bbox_head,
             train_cfg=train_cfg,
@@ -50,15 +52,46 @@ class SESSD3DNet(SingleStage3DDetector):
         Returns:
             dict: Losses.
         """
+        tea_preds = self.get_tea_preds(points, self.test_cfg.sample_mod)
         points_cat = torch.stack(points)
 
         x = self.extract_feat(points_cat)
-        bbox_preds = self.bbox_head(x, self.train_cfg.sample_mod)
+        stu_preds = self.bbox_head(x, self.train_cfg.sample_mod)
+
         loss_inputs = (points, gt_bboxes_3d, gt_labels_3d, pts_semantic_mask,
                        pts_instance_mask, img_metas)
         losses = self.bbox_head.loss(
-            bbox_preds, *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+            stu_preds, tea_preds, *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
         return losses
+
+    def get_tea_preds(self, points, sample_mod):
+        # 新建一个SESSD3DNet_tea网络对象
+        model_tea = copy.deepcopy(self)
+        for param in model_tea.parameters():
+            param.detach_()
+        # 使用ema算法，将当前学生网络参数传递给教师网络
+        # global_step = epoch * len(data_loader)
+        # self.update_ema_variables(model_tea, global_step=None)
+        tea_preds = model_tea.forward_test(points, None, sample_mod)
+
+
+        # 得出预测值
+        # 数据增强并反回
+    def update_ema_variables(self, model_tea, global_step):
+        """
+        # 将学生网络（本网络）的参数使用ema算法传递给教师网络（model_tea）
+        Args:
+            model_tea:
+            global_step:
+
+        Returns:
+
+        """
+
+        alpha = min(1 - 1 / (global_step + 1), 0.999)
+        for ema_param, param in zip(model_tea.parameters(), self.parameters()):
+            ema_param.data.mul_(alpha).add_(1 - alpha, param.data)
+
 
     def simple_test(self, points, img_metas, imgs=None, rescale=False):
         """Forward of testing.
