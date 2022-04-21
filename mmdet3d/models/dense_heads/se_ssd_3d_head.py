@@ -152,7 +152,64 @@ class SESSD3DHead(VoteHead):
          vote_mask, positive_mask, negative_mask, centerness_weights,
          box_loss_weights, heading_res_loss_weight) = targets
 
+        # calculate centerness loss
+        centerness_loss = self.objectness_loss(
+            bbox_preds['obj_scores'].transpose(2, 1),
+            centerness_targets,
+            weight=centerness_weights)
 
+        # calculate center loss
+        center_loss = self.center_loss(
+            bbox_preds['center_offset'],
+            center_targets,
+            weight=box_loss_weights.unsqueeze(-1))
+
+        # calculate direction class loss
+        dir_class_loss = self.dir_class_loss(
+            bbox_preds['dir_class'].transpose(1, 2),
+            dir_class_targets,
+            weight=box_loss_weights)
+
+        # calculate direction residual loss
+        dir_res_loss = self.dir_res_loss(
+            bbox_preds['dir_res_norm'],
+            dir_res_targets.unsqueeze(-1).repeat(1, 1, self.num_dir_bins),
+            weight=heading_res_loss_weight)
+
+        # calculate size residual loss
+        size_loss = self.size_res_loss(
+            bbox_preds['size'],
+            size_res_targets,
+            weight=box_loss_weights.unsqueeze(-1))
+
+        # calculate corner loss
+        one_hot_dir_class_targets = dir_class_targets.new_zeros(
+            bbox_preds['dir_class'].shape)
+        one_hot_dir_class_targets.scatter_(2, dir_class_targets.unsqueeze(-1),
+                                           1)
+        pred_bbox3d = self.bbox_coder.decode(
+            dict(
+                center=bbox_preds['center'],
+                dir_res=bbox_preds['dir_res'],
+                dir_class=one_hot_dir_class_targets,
+                size=bbox_preds['size']))
+        pred_bbox3d = pred_bbox3d.reshape(-1, pred_bbox3d.shape[-1])
+        pred_bbox3d = img_metas[0]['box_type_3d'](
+            pred_bbox3d.clone(),
+            box_dim=pred_bbox3d.shape[-1],
+            with_yaw=self.bbox_coder.with_rot,
+            origin=(0.5, 0.5, 0.5))
+        pred_corners3d = pred_bbox3d.corners.reshape(-1, 8, 3)
+        corner_loss = self.corner_loss(
+            pred_corners3d,
+            corner3d_targets.reshape(-1, 8, 3),
+            weight=box_loss_weights.view(-1, 1, 1))
+
+        # calculate vote loss
+        vote_loss = self.vote_loss(
+            bbox_preds['vote_offset'].transpose(1, 2),
+            vote_targets,
+            weight=vote_mask.unsqueeze(-1))
 
         losses = dict(
 

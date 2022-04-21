@@ -52,7 +52,7 @@ class SESSD3DNet_stu(SingleStage3DDetector):
         Returns:
             dict: Losses.
         """
-        tea_preds = self.get_tea_preds(points, self.test_cfg.sample_mod)
+        # tea_preds = self.get_tea_preds(points, self.test_cfg.sample_mod)
         points_cat = torch.stack(points)
 
         x = self.extract_feat(points_cat)
