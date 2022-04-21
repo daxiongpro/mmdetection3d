@@ -152,22 +152,9 @@ model = dict(
             bias=True),
         conv_cfg=dict(type='Conv1d'),
         norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
-        objectness_loss=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=True,
-            reduction='sum',
-            loss_weight=1.0),
-        center_loss=dict(
-            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        dir_class_loss=dict(
-            type='CrossEntropyLoss', reduction='sum', loss_weight=1.0),
-        dir_res_loss=dict(
-            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        size_res_loss=dict(
-            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        corner_loss=dict(
-            type='SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        vote_loss=dict(type='SmoothL1Loss', reduction='sum', loss_weight=1.0)),
+        ce_loss=dict(type='CELoss', reduction='sum', loss_weight=1.0),
+        od_iou_loss=dict(type='ODIouLoss', reduction='sum', loss_weight=1.0)
+        ),
     # model training and testing settings
     train_cfg=dict(
         sample_mod='spec', pos_distance_thr=10.0, expand_dims_length=0.05),

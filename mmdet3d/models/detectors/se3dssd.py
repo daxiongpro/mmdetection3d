@@ -52,32 +52,35 @@ class SESSD3DNet_stu(SingleStage3DDetector):
         Returns:
             dict: Losses.
         """
-        # tea_preds = self.get_tea_preds(points, self.test_cfg.sample_mod)
         points_cat = torch.stack(points)
 
-        x = self.extract_feat(points_cat)
-        stu_preds = self.bbox_head(x, self.train_cfg.sample_mod)
+        tea_preds = self.get_tea_preds(points)
 
-        loss_inputs = (points, gt_bboxes_3d, gt_labels_3d, pts_semantic_mask,
-                       pts_instance_mask, img_metas)
-        losses = self.bbox_head.loss(
-            stu_preds, tea_preds, *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+        x = self.extract_feat(points_cat)
+        stu_preds = self.bbox_head(x)
+
+        gt = (gt_bboxes_3d, gt_labels_3d)
+        losses = self.bbox_head.loss(stu_preds, tea_preds, gt)
         return losses
 
     def get_tea_preds(self, points, sample_mod):
         # 新建一个SESSD3DNet_tea网络对象
-        model_tea = copy.deepcopy(self)
+        model_tea = copy.deepcopy(self)  # 学生网络的参数
+        model_tea.load_state_dict()  # todo 获取上一步教师网络的参数
         for param in model_tea.parameters():
             param.detach_()
+
         # 使用ema算法，将当前学生网络参数传递给教师网络
         # global_step = epoch * len(data_loader)
-        # self.update_ema_variables(model_tea, global_step=None)
-        tea_preds = model_tea.forward_test(points, None, sample_mod)
-
+        self.update_ema_variables(model_tea)
 
         # 得出预测值
-        # 数据增强并反回
-    def update_ema_variables(self, model_tea, global_step):
+        x = self.extract_feat(points)
+        tea_preds = self.bbox_head(x)
+        # 反回
+        return tea_preds
+
+    def update_ema_variables(self, model_tea, global_step=None):
         """
         # 将学生网络（本网络）的参数使用ema算法传递给教师网络（model_tea）
         Args:
@@ -88,10 +91,10 @@ class SESSD3DNet_stu(SingleStage3DDetector):
 
         """
 
-        alpha = min(1 - 1 / (global_step + 1), 0.999)
+        # alpha = min(1 - 1 / (global_step + 1), 0.999)
+        alpha = 0.999
         for ema_param, param in zip(model_tea.parameters(), self.parameters()):
             ema_param.data.mul_(alpha).add_(1 - alpha, param.data)
-
 
     def simple_test(self, points, img_metas, imgs=None, rescale=False):
         """Forward of testing.
