@@ -50,8 +50,6 @@ train_pipeline = [
         type='GlobalRotScaleTrans',
         rot_range=[-0.78539816, 0.78539816],
         scale_ratio_range=[0.9, 1.1]),
-    # 3DSSD can get a higher performance without this transform
-    # dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
     dict(type='PointSample', num_points=16384),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
     dict(type='Collect3D', keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
@@ -153,7 +151,7 @@ model = dict(
         conv_cfg=dict(type='Conv1d'),
         norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
         ce_loss=dict(type='CELoss', reduction='sum', loss_weight=1.0),
-        od_iou_loss=dict(type='ODIouLoss', reduction='sum', loss_weight=1.0)
+        od_iou_loss=dict(type='odiou_3D', reduction='sum', loss_weight=1)
         ),
     # model training and testing settings
     train_cfg=dict(
