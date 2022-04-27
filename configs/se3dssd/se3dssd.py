@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/3dssd.py', '../_base_/datasets/kitti-3d-car.py',
+    '../_base_/datasets/kitti-3d-car.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -151,7 +151,7 @@ model = dict(
         conv_cfg=dict(type='Conv1d'),
         norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.1),
         ce_loss=dict(type='CELoss', reduction='sum', loss_weight=1.0),
-        od_iou_loss=dict(type='odiou_3D', reduction='sum', loss_weight=1)
+        # od_iou_loss=dict(type='odiou_3D', reduction='sum', loss_weight=1)
         ),
     # model training and testing settings
     train_cfg=dict(

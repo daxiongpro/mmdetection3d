@@ -14,6 +14,7 @@ from .point_rpn_head import PointRPNHead
 from .shape_aware_head import ShapeAwareHead
 from .smoke_mono3d_head import SMOKEMono3DHead
 from .ssd_3d_head import SSD3DHead
+from .ssd_3d_head_odiou import SSD3DHead_odiou
 from .vote_head import VoteHead
 from .se_ssd_3d_head import SESSD3DHead
 
@@ -22,5 +23,5 @@ __all__ = [
     'SSD3DHead', 'BaseConvBboxHead', 'CenterHead', 'ShapeAwareHead',
     'BaseMono3DDenseHead', 'AnchorFreeMono3DHead', 'FCOSMono3DHead',
     'GroupFree3DHead', 'PointRPNHead', 'SMOKEMono3DHead', 'PGDHead',
-    'MonoFlexHead', 'SESSD3DHead'
+    'MonoFlexHead', 'SESSD3DHead', 'SSD3DHead_odiou'
 ]

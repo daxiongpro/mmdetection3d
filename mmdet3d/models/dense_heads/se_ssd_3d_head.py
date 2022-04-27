@@ -40,17 +40,10 @@ class SESSD3DHead(VoteHead):
             pred_layer_cfg=pred_layer_cfg,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            objectness_loss=None,
-            center_loss=None,
-            dir_class_loss=None,
-            dir_res_loss=None,
-            size_class_loss=None,
-            size_res_loss=None,
-            semantic_loss=None,
             init_cfg=init_cfg)
 
         self.ce_loss = build_loss(ce_loss)
-        self.od_iou_loss = build_loss(od_iou_loss)
+        # self.od_iou_loss = build_loss(od_iou_loss)
         self.num_candidates = vote_module_cfg['num_points']
 
     def loss(self, stu_preds, tea_preds, gt):
