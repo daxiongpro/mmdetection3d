@@ -193,3 +193,42 @@ class GridMask(BaseTransform):
 
         results.update(img=imgs)
         return results
+
+
+@TRANSFORMS.register_module()
+class BEVFusionRandomFlip3D:
+    # TODO: compare this random flip with RandomFlip3D in MMDet3D
+
+    def __call__(self, input_dict: Dict[str, Any]) -> Dict[str, Any]:
+        flip_horizontal = np.random.choice([0, 1])
+        flip_vertical = np.random.choice([0, 1])
+
+        rotation = np.eye(3)
+        if 'transformation_3d_flow' not in input_dict:
+            input_dict['transformation_3d_flow'] = []
+
+        if flip_horizontal:
+            rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) @ rotation
+            if 'points' in input_dict:
+                input_dict['points'].flip('horizontal')
+            if 'gt_bboxes_3d' in input_dict:
+                input_dict['gt_bboxes_3d'].flip('horizontal')
+            if 'gt_masks_bev' in input_dict:
+                input_dict['gt_masks_bev'] = input_dict[
+                    'gt_masks_bev'][:, :, ::-1].copy()
+
+            input_dict['transformation_3d_flow'].append('HF')
+
+        if flip_vertical:
+            rotation = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) @ rotation
+            if 'points' in input_dict:
+                input_dict['points'].flip('vertical')
+            if 'gt_bboxes_3d' in input_dict:
+                input_dict['gt_bboxes_3d'].flip('vertical')
+            if 'gt_masks_bev' in input_dict:
+                input_dict['gt_masks_bev'] = input_dict[
+                    'gt_masks_bev'][:, ::-1, :].copy()
+
+            input_dict['transformation_3d_flow'].append('VF')
+
+        return input_dict

@@ -53,7 +53,7 @@ class BEVFusion(Base3DDetector):
         self.bbox_head = MODELS.build(bbox_head)
         # hard code here where using converted checkpoint of original
         # implementation of `BEVFusion`
-        self.use_converted_checkpoint = True
+        self.use_converted_checkpoint = False
 
         self.init_weights()
 
@@ -161,7 +161,9 @@ class BEVFusion(Base3DDetector):
             batch_inputs_dict (dict): The model input dict which include
                 'points' keys.
 
-                - points (list[torch.Tensor]): Point cloud of each sample.
+                - points (list[torch.Tensor]): Point clouds of samples.
+                - imgs (list[torch.Tensor]): Images of samples.
+
             batch_data_samples (List[:obj:`Det3DDataSample`]): The Data
                 Samples. It usually includes information such as
                 `gt_instance_3d`.
@@ -210,7 +212,31 @@ class BEVFusion(Base3DDetector):
             camera_intrinsics.append(meta['cam2img'])
             camera2lidar.append(meta['cam2lidar'])
             img_aug_matrix.append(meta.get('img_aug_matrix', np.eye(4)))
-            lidar_aug_matrix.append(meta.get('lidar_aug_matrix', np.eye(4)))
+            lidar_augs = np.eye(4).astype(np.float32)
+            if 'transformation_3d_flow' in meta:
+                for i, aug in enumerate(meta['transformation_3d_flow']):
+                    if aug == 'R':
+                        assert len(meta['transformation_3d_flow']) > i+1 and \
+                            meta['transformation_3d_flow'][i+1] == 'S' and \
+                            meta['transformation_3d_flow'][i+2] == 'T', \
+                            'Rotation(R) Scale(S) Translation(T) must appear'
+                        'together and be arranged in order in MMDet3D'
+
+                        lidar_augs[:3, :3] = meta['pcd_rotation'].T * meta[
+                            'pcd_scale_factor']
+                        lidar_augs[:3, 3] = meta['pcd_trans'] * meta[
+                            'pcd_scale_factor']
+                    elif aug in ['S', 'T']:
+                        continue
+                    elif aug == 'HF':
+                        horizon_flip = np.eye(4)
+                        horizon_flip[1, 1] = -1
+                        lidar_augs = horizon_flip @ lidar_augs
+                    elif aug == 'VF':
+                        vertical_flip = np.eye(4)
+                        vertical_flip[0, 0] = -1
+                        lidar_augs = vertical_flip @ lidar_augs
+            lidar_aug_matrix.append(lidar_augs)
 
         lidar2image = imgs.new_tensor(np.asarray(lidar2image))
         camera_intrinsics = imgs.new_tensor(np.array(camera_intrinsics))
@@ -239,4 +265,13 @@ class BEVFusion(Base3DDetector):
     def loss(self, batch_inputs_dict: Dict[str, Optional[Tensor]],
              batch_data_samples: List[Det3DDataSample],
              **kwargs) -> List[Det3DDataSample]:
-        pass
+        batch_input_metas = [item.metainfo for item in batch_data_samples]
+        feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
+
+        losses = dict()
+        if self.with_bbox_head:
+            bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
+
+        losses.update(bbox_loss)
+
+        return losses
