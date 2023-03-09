@@ -319,8 +319,7 @@ class DepthLSSTransform(BaseDepthTransform):
                     3,
                     stride=downsample,
                     padding=1,
-                    bias=False,
-                ),
+                    bias=False),
                 nn.BatchNorm2d(out_channels),
                 nn.ReLU(True),
                 nn.Conv2d(

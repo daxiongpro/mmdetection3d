@@ -1,6 +1,7 @@
 # modify from https://github.com/mit-han-lab/bevfusion
 import torch
 from mmdet.models.task_modules import AssignResult, BaseAssigner, BaseBBoxCoder
+from mmengine.structures import InstanceData
 
 try:
     from scipy.optimize import linear_sum_assignment
@@ -274,13 +275,19 @@ class HungarianAssigner3D(BaseAssigner):
 
         # 2. compute the weighted costs
         # see mmdetection/mmdet/core/bbox/match_costs/match_cost.py
-        cls_cost = self.cls_cost(cls_pred[0].T, gt_labels)
+        pred_instances = InstanceData(scores=cls_pred[0].T)
+        gt_instances = InstanceData(labels=gt_labels)
+        cls_cost = self.cls_cost(pred_instances, gt_instances)
         reg_cost = self.reg_cost(bboxes, gt_bboxes, train_cfg)
-        iou = self.iou_calculator(bboxes, gt_bboxes)
+        iou = self.iou_calculator(bboxes, gt_bboxes)  # (200, 4) 有nan
+        # iou = torch.where(torch.isnan(iou), torch.tensor([0.0]).cuda(), iou)
         iou_cost = self.iou_cost(iou)
 
         # weighted sum of above three costs
         cost = cls_cost + reg_cost + iou_cost
+        cost = torch.where(
+            torch.isnan(cost),
+            torch.tensor([0.0]).cuda(), cost)  # nan 部分设置为 0
 
         # 3. do Hungarian matching on CPU using linear_sum_assignment
         cost = cost.detach().cpu()
