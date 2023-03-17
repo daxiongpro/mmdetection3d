@@ -111,8 +111,8 @@ class BEVFusion(Base3DDetector):
             lidar2image,
             camera_intrinsics,
             camera2lidar,
-            img_aug_matrix,
-            lidar_aug_matrix,
+            img_aug_matrix,    # 这两个矩阵，是为了在camera转ego坐标系时，
+            lidar_aug_matrix,  # 抵消数据增强的时候产生的平移、旋转
             img_metas,
         )
         return x
@@ -202,7 +202,7 @@ class BEVFusion(Base3DDetector):
         batch_input_metas,
         **kwargs,
     ):
-        imgs = batch_inputs_dict.get('imgs', None)
+        imgs = batch_inputs_dict.get('imgs', None)  # [2, 6, 3, 256, 704]
         points = batch_inputs_dict.get('points', None)
 
         lidar2image, camera_intrinsics, camera2lidar = [], [], []

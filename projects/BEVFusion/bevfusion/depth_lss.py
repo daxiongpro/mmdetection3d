@@ -186,7 +186,7 @@ class BaseDepthTransform(BaseTransform):
 
     def forward(
         self,
-        img,
+        img,  # (B, N, C, H, W) = (2, 6, 256, 32, 88)
         points,
         lidar2image,
         cam_intrinsic,
@@ -242,22 +242,22 @@ class BaseDepthTransform(BaseTransform):
                 masked_coords = cur_coords[c, on_img[c]].long()
                 masked_dist = dist[c, on_img[c]]
                 depth[b, c, 0, masked_coords[:, 0],
-                      masked_coords[:, 1]] = masked_dist
+                      masked_coords[:, 1]] = masked_dist  # depth = (B, N, D, H, W) = (2, 6, 1, 256, 704)
 
         extra_rots = lidar_aug_matrix[..., :3, :3]
         extra_trans = lidar_aug_matrix[..., :3, 3]
         geom = self.get_geometry(
-            camera2lidar_rots,
-            camera2lidar_trans,
-            intrins,
-            post_rots,
-            post_trans,
+            camera2lidar_rots,  # 由相机坐标系->车身坐标系的旋转矩阵，rots = (B, N, 3, 3)
+            camera2lidar_trans,  # 由相机坐标系->车身坐标系的平移矩阵，trans=(B, N, 3)
+            intrins,  # 相机内参，intrinsic = (B, N, 3, 3)；
+            post_rots,  # 由图像增强引起的旋转矩阵，post_rots = (B, N, 3, 3)；
+            post_trans,  # 由图像增强引起的平移矩阵，post_trans = (B, N, 3)；
             extra_rots=extra_rots,
             extra_trans=extra_trans,
-        )
+        )  # geom_feats是预先生成的3D空间坐标点, (B, N, D, H, W, 3)
 
-        x = self.get_cam_feats(img, depth)
-        x = self.bev_pool(geom, x)
+        x = self.get_cam_feats(img, depth)  # x是camera feature (B, N, D, H, W, C)
+        x = self.bev_pool(geom, x)  # bev 下camera feature (B, C, H', W')
         return x
 
 
@@ -335,13 +335,15 @@ class DepthLSSTransform(BaseDepthTransform):
         B, N, C, fH, fW = x.shape
 
         d = d.view(B * N, *d.shape[2:])
-        x = x.view(B * N, C, fH, fW)
+        x = x.view(B * N, C, fH, fW)  # [12, 256, 32, 88]
+        
+        d = self.dtransform(d)  # [12, 64, 32, 88]
+        x = torch.cat([d, x], dim=1)  # [12, 320, 32, 88]
+        x = self.depthnet(x)  # (BN, C, H, W) = [12, 198, 32, 88]
 
-        d = self.dtransform(d)
-        x = torch.cat([d, x], dim=1)
-        x = self.depthnet(x)
+        depth = x[:, :self.D].softmax(dim=1)  # [12, 118, 32, 88] self.D = 118
 
-        depth = x[:, :self.D].softmax(dim=1)
+        # 深度分布与feature相乘, (BN, C, D, H, W) = [12, 80, 118, 32, 88]
         x = depth.unsqueeze(1) * x[:, self.D:(self.D + self.C)].unsqueeze(2)
 
         x = x.view(B, N, self.C, self.D, fH, fW)
