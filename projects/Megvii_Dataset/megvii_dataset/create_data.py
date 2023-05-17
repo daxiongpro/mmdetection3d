@@ -1,11 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-from os import path as osp
-from tools.dataset_converters import nuscenes_converter as nuscenes_converter
-from projects.megvii_dataset.data_converters import megvii_converter as megvii_converter
-from tools.dataset_converters.create_gt_database import (
-    GTDatabaseCreater, create_groundtruth_database)
-from tools.dataset_converters.update_infos_to_v2 import update_pkl_infos
+from projects.Megvii_Dataset.megvii_dataset import megvii_converter as megvii_converter
 
 
 def megvii_data_prep(root_path,

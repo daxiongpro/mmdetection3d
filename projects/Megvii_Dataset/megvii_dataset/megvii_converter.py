@@ -1,19 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
-from collections import OrderedDict
 from os import path as osp
-from typing import List, Tuple, Union
-
-import mmcv
 import mmengine
-import numpy as np
-from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import view_points
 from pyquaternion import Quaternion
-from shapely.geometry import MultiPoint, box
-
-from mmdet3d.datasets.convert_utils import NuScenesNameMapping
-from mmdet3d.structures import points_cam2img
 import json
 
 
@@ -86,7 +75,7 @@ def _get_instances(labels):
             category:'汽车'
         },
         {}, {}, ...
-        
+
     ]
     --------------------------------------------------
     nuscenes instances：
@@ -97,13 +86,13 @@ def _get_instances(labels):
         },
         {}, {}, ...
     ]
-    
+
     """
     categories = [
         "小汽车", "汽车", "货车", "工程车", "巴士", "摩托车", "自行车", "三轮车", "骑车人", "骑行的人",
         "人", "行人", "其它", "残影", "蒙版", "其他", "拖挂", "锥桶", "防撞柱"
     ]
-    
+
     instances = []
     for label in labels:
         ins = dict(
