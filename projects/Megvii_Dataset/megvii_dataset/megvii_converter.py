@@ -5,6 +5,11 @@ import mmengine
 from pyquaternion import Quaternion
 import json
 
+class_names = [
+    "小汽车", "汽车", "货车", "工程车", "巴士", "摩托车", "自行车", "三轮车", "骑车人", "骑行的人", "人",
+    "行人", "其它", "残影", "蒙版", "其他", "拖挂", "锥桶", "防撞柱"
+]
+
 
 def create_megvii_infos(root_path, info_prefix):
     """处理旷视数据集的激光雷达数据
@@ -15,16 +20,19 @@ def create_megvii_infos(root_path, info_prefix):
 
 
     """
-    train_nusc_infos, val_nusc_infos = _fill_trainval_infos(root_path)
 
-    if train_nusc_infos is not None:
-        data = dict(infos=train_nusc_infos, metadata=None)
+    metainfo = dict(class_names=class_names)
+
+    train_infos, val_infos = _fill_trainval_infos(root_path)
+
+    if train_infos is not None:
+        data = dict(data_list=train_infos, metainfo=metainfo)
         info_path = osp.join(root_path,
                              '{}_infos_train.pkl'.format(info_prefix))
         mmengine.dump(data, info_path)
 
-    if val_nusc_infos is not None:
-        data['infos'] = val_nusc_infos
+    if val_infos is not None:
+        data['data_list'] = val_infos
         info_val_path = osp.join(root_path,
                                  '{}_infos_val.pkl'.format(info_prefix))
         mmengine.dump(data, info_val_path)
@@ -34,8 +42,8 @@ def _fill_trainval_infos(root_path):
     """全部划分为训练集
     """
 
-    train_nusc_infos = []
-    val_nusc_infos = None
+    train_infos = []
+    val_infos = None
 
     dir_fuser_lidar = os.path.join(root_path, 'fuser_lidar/')
     dir_annotation_det = os.path.join(root_path, "annotation_det/")
@@ -56,10 +64,10 @@ def _fill_trainval_infos(root_path):
                         sample_idx=frame_idx,
                         lidar_path=lidar_path,
                         instances=_get_instances(labels))
-                    train_nusc_infos.append(info)
+                    train_infos.append(info)
                     frame_idx += 1
 
-    return train_nusc_infos, val_nusc_infos
+    return train_infos, val_infos
 
 
 def _get_instances(labels):
@@ -88,15 +96,11 @@ def _get_instances(labels):
     ]
 
     """
-    categories = [
-        "小汽车", "汽车", "货车", "工程车", "巴士", "摩托车", "自行车", "三轮车", "骑车人", "骑行的人",
-        "人", "行人", "其它", "残影", "蒙版", "其他", "拖挂", "锥桶", "防撞柱"
-    ]
 
     instances = []
     for label in labels:
         ins = dict(
-            bbox_label_3d=categories.index(label['category']),  # 1
+            bbox_label_3d=class_names.index(label['category']),  # 1
             bbox_3d=_label2box(label['xyz_lidar'], label['lwh'],
                                label['angle_lidar']))
         instances.append(ins)
