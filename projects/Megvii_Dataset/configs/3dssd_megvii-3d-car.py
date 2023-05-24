@@ -10,6 +10,15 @@ custom_imports = dict(
     ],
     allow_failed_imports=False)
 
+dataset_type = 'MegviiDataset'
+data_root = 'data/kuangshi_data/ppl_bag_20220909_132234_det/'
+ann_file = 'megvii_infos_train.pkl'
+launcher = 'none'
+work_dir = './work_dirs/3dssd_megvii-3d-car'
+class_names = [
+    '小汽车', '汽车', '货车', '工程车', '巴士', '摩托车', '自行车', '三轮车', '骑车人', '骑行的人', '人',
+    '行人', '其它', '残影', '蒙版', '其他', '拖挂', '锥桶', '防撞柱'
+]
 
 model = dict(
     type='SSD3DNet',
@@ -78,7 +87,7 @@ model = dict(
             type='mmdet.SmoothL1Loss', reduction='sum', loss_weight=1.0),
         vote_loss=dict(
             type='mmdet.SmoothL1Loss', reduction='sum', loss_weight=1.0),
-        num_classes=19,
+        num_classes=len(class_names),
         bbox_coder=dict(
             type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)),
     train_cfg=dict(
@@ -89,15 +98,6 @@ model = dict(
         score_thr=0.0,
         per_class_proposal=True,
         max_output_num=100))
-dataset_type = 'MegviiDataset'
-data_root = 'data/kuangshi_data/ppl_bag_20220909_132234_det/'
-ann_file = 'megvii_infos_train.pkl'
-launcher = 'none'
-work_dir = './work_dirs/3dssd_megvii-3d-car'
-class_names = [
-    '小汽车', '汽车', '货车', '工程车', '巴士', '摩托车', '自行车', '三轮车', '骑车人', '骑行的人', '人',
-    '行人', '其它', '残影', '蒙版', '其他', '拖挂', '锥桶', '防撞柱'
-]
 
 point_cloud_range = [0, -40, -5, 70, 40, 3]
 input_modality = dict(use_lidar=True, use_camera=False)
@@ -150,7 +150,11 @@ test_pipeline = [
     dict(type='Pack3DDetInputs', keys=['points'])
 ]
 eval_pipeline = [
-    dict(type='MegviiLoadPointsFromFile', coord_type='LIDAR', load_dim=3, use_dim=3),
+    dict(
+        type='MegviiLoadPointsFromFile',
+        coord_type='LIDAR',
+        load_dim=3,
+        use_dim=3),
     dict(type='Pack3DDetInputs', keys=['points'])
 ]
 train_dataloader = dict(
@@ -221,7 +225,7 @@ default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=50),
     param_scheduler=dict(type='ParamSchedulerHook'),
-    checkpoint=dict(type='CheckpointHook', interval=-1),
+    checkpoint=dict(type='CheckpointHook', interval=1),
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='Det3DVisualizationHook'))
 env_cfg = dict(
@@ -232,13 +236,14 @@ log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
 load_from = None
 resume = False
+# resume = 'work_dirs/3dssd_megvii-3d-car/last_checkpoint'
 file_client_args = dict(backend='disk')
 lr = 0.002
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.0),
     clip_grad=dict(max_norm=35, norm_type=2))
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=20)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=180, val_interval=20)
 # val_cfg = dict(type='ValLoop')
 # test_cfg = dict(type='TestLoop')
 param_scheduler = [
