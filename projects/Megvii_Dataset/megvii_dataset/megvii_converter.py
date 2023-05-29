@@ -120,6 +120,7 @@ def _label2box(xyz_lidar, lwh, angle_lidar):
     h = lwh['h']
     q = Quaternion(angle_lidar['w'], angle_lidar['x'], angle_lidar['y'],
                    angle_lidar['z'])
-    bbox_3d = [x, y, z - h / 2, l, w, h, q.angle]
+    # bbox_3d = [x, y, z - h / 2, l, w, h, q.angle]
+    bbox_3d = [x, y, z, l, w, h, q.angle]
 
     return bbox_3d
