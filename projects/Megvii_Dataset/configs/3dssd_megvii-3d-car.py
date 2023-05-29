@@ -136,12 +136,12 @@ test_pipeline = [
         pts_scale_ratio=1,
         flip=False,
         transforms=[
-            dict(
-                type='GlobalRotScaleTrans',
-                rot_range=[0, 0],
-                scale_ratio_range=[1.0, 1.0],
-                translation_std=[0, 0, 0]),
-            dict(type='RandomFlip3D'),
+            # dict(
+            #     type='GlobalRotScaleTrans',
+            #     rot_range=[0, 0],
+            #     scale_ratio_range=[1.0, 1.0],
+            #     translation_std=[0, 0, 0]),
+            # dict(type='RandomFlip3D'),
             dict(
                 type='PointsRangeFilter',
                 point_cloud_range=[0, -40, -5, 70, 40, 3]),
@@ -191,30 +191,28 @@ train_dataloader = dict(
 #         test_mode=True,
 #         metainfo=dict(class_names=class_names),
 #         box_type_3d='LiDAR'))
-# test_dataloader = dict(
-#     batch_size=1,
-#     num_workers=1,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False),
-#     dataset=dict(
-#         type='MegviiDataset',
-#         data_root=data_root,
-#         data_prefix=dict(pts='training/velodyne_reduced'),
-#         ann_file=ann_file,
-#         pipeline=test_pipeline,
-#         modality=dict(use_lidar=True, use_camera=False),
-#         test_mode=True,
-#         metainfo=dict(class_names=class_names),
-#         box_type_3d='LiDAR'))
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=1,
+    persistent_workers=True,
+    drop_last=False,
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    dataset=dict(
+        type='MegviiDataset',
+        data_root=data_root,
+        data_prefix=dict(pts='training/velodyne_reduced'),
+        ann_file=ann_file,
+        pipeline=test_pipeline,
+        modality=dict(use_lidar=True, use_camera=False),
+        test_mode=True,
+        metainfo=dict(class_names=class_names),
+        box_type_3d='LiDAR'))
 # val_evaluator = dict(
 #     type='KittiMetric',
 #     ann_file=data_root + ann_file,
 #     metric='bbox')
-# test_evaluator = dict(
-#     type='KittiMetric',
-#     ann_file=data_root + ann_file,
-#     metric='bbox')
+test_evaluator = dict(
+    type='KittiMetric', ann_file=data_root + ann_file, metric='bbox')
 vis_backends = [dict(type='LocalVisBackend')]
 visualizer = dict(
     type='Det3DLocalVisualizer',
@@ -235,7 +233,7 @@ env_cfg = dict(
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
 load_from = None
-resume = False
+resume = "work_dirs/3dssd_megvii-3d-car/epoch_81.pth"
 # resume = 'work_dirs/3dssd_megvii-3d-car/last_checkpoint'
 file_client_args = dict(backend='disk')
 lr = 0.002
@@ -243,9 +241,9 @@ optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.0),
     clip_grad=dict(max_norm=35, norm_type=2))
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=180, val_interval=20)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=180, val_interval=-1)
 # val_cfg = dict(type='ValLoop')
-# test_cfg = dict(type='TestLoop')
+test_cfg = dict(type='TestLoop')
 param_scheduler = [
     dict(
         type='MultiStepLR',
